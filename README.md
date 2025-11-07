@@ -53,23 +53,28 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
    cd google-chat-viewer
    ```
 
-2. **Set up virtual environment and install dependencies**:
-   ```bash
-   ./setup.sh
-   ```
-   This script will:
-   - Create a Python virtual environment in `venv/`
-   - Install all required dependencies
-   - Set up the project for first use
+2. **Set up virtual environment and install dependencies** (choose one):
+   - **Automatic:**
+     ```bash
+     ./setup.sh
+     ```
+     This script creates a Python virtual environment in `venv/`, installs dependencies, and sets up the project.
+   - **Manual:**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate  # On Windows: venv\Scripts\activate
+     pip install -r requirements.txt
+     ```
 
 3. **Start the application**:
-   ```bash
-   ./start.sh
-   ```
-   This will:
-   - Activate the virtual environment
-   - Launch the Streamlit application
-   - Open your browser to `http://localhost:8501`
+   - With script:
+     ```bash
+     ./start.sh
+     ```
+   - Or manually:
+     ```bash
+     streamlit run app.py
+     ```
 
 4. **Stop the application**:
    ```bash
@@ -81,21 +86,14 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 
 6. **View your data**: Browse through your chat messages in a clean interface
 
-### Manual Installation (Alternative)
-
-If you prefer manual setup:
-```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run application
-streamlit run app.py
+#### File Structure
+```
+google-chat-viewer/
+├── app.py           # Main application
+├── run.py           # Setup and launch script
+├── requirements.txt # Dependencies
+├── README.md        # This file
+└── venv/            # Virtual environment (created automatically)
 ```
 
 ## What you need
