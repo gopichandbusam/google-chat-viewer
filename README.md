@@ -49,7 +49,7 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 
 1. **Clone or download this repository**
    ```bash
-   git clone <https://github.com/gopichandbusam/google-chat-viewer>
+   git clone https://github.com/gopichandbusam/google-chat-viewer.git
    cd google-chat-viewer
    ```
 
