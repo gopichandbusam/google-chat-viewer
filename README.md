@@ -49,7 +49,7 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 
 1. **Clone or download this repository**
    ```bash
-   git clone <repository-url>
+   git clone <https://github.com/gopichandbusam/google-chat-viewer>
    cd google-chat-viewer
    ```
 
@@ -145,7 +145,7 @@ The anonymization feature provides a powerful way to protect privacy:
 
 ### **Examples of Useful Mappings:**
 ```
-Original Text          →  Replacement
+Original Text         →  Replacement
 Gopichand Busam       →  Manager
 John Smith            →  Developer
 Acme Corporation      →  Company A
@@ -258,7 +258,7 @@ We welcome contributions! This project is open source and community-driven.
 
 1. **🍴 Fork the Repository**
    ```bash
-   git clone https://github.com/yourusername/google-chat-viewer.git
+   git clone https://github.com/gopichandbusam/google-chat-viewer.git
    cd google-chat-viewer
    ```
 
@@ -304,7 +304,7 @@ We welcome contributions! This project is open source and community-driven.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/google-chat-viewer.git
+git clone https://github.com/gopichandbusam/google-chat-viewer.git
 cd google-chat-viewer
 
 # Create virtual environment
@@ -365,9 +365,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### **Getting Help**
 - 📖 **Documentation**: Check this README and in-app help
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/google-chat-viewer/issues)
-- 💡 **Feature Requests**: [Request a feature](https://github.com/yourusername/google-chat-viewer/issues)
-- 🤔 **Questions**: [Start a discussion](https://github.com/yourusername/google-chat-viewer/discussions)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/gopichandbusam/google-chat-viewer/issues)
+- 💡 **Feature Requests**: [Request a feature](https://github.com/gopichandbusam/google-chat-viewer/issues)
+- 🤔 **Questions**: [Start a discussion](https://github.com/gopichandbusam/google-chat-viewer/discussions)
 
 ### **Project Stats**
 - 🌟 **Stars**: Help us grow by starring the repository
