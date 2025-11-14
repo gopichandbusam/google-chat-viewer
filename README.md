@@ -1,4 +1,4 @@
-# 💬 Google Chat Viewer
+# 💬 Google Chat Viewer & Anonymization
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -158,66 +158,30 @@ The app uses intelligent pattern matching:
 - **Punctuation aware**: Handles "John," and "John!" correctly
 - **Multi-word support**: "John Smith" replaces the full name
 
-## File Structure
-
+#### File Structure
 ```
 google-chat-viewer/
 ├── app.py           # Main application
-├── run.py          # Setup and launch script
+├── run.py           # Setup and launch script
 ├── requirements.txt # Dependencies
-├── README.md       # This file
-└── venv/          # Virtual environment (created automatically)
-```
-
-## Manual Setup (Optional)
-
-If you prefer manual setup:
-
-```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate it
-source venv/bin/activate  # macOS/Linux
-# or
-venv\Scripts\activate     # Windows
-
-# Install dependencies  
-pip install -r requirements.txt
-
-# Run the app
-streamlit run app.py
+├── README.md        # This file
+└── venv/            # Virtual environment (created automatically)
 ```
 
 ## 🎯 Advanced Features
 
 ### 🔒 Advanced Data Anonymization
 
-### **Multi-Mode Anonymization System**
-- **🤖 Automatic Mode**: Auto-generate all replacements (Person 1, person1@example.com, [GITHUB_LINK])
-- **✋ Manual Mode**: Only anonymize what you specify with custom mappings
-- **🔀 Mixed Mode**: Combine automatic generation with custom replacements
+**Multi-Mode System:**
+- 🤖 Automatic: Auto-generate replacements (Person 1, person1@example.com, [GITHUB_LINK])
+- ✋ Manual: Only anonymize what you specify with custom mappings
+- 🔀 Mixed: Combine automatic and custom replacements
 
-### **Comprehensive Content Protection**
-- **Names & Identity**: Replace in sender fields AND message content using smart pattern matching
-- **Email Addresses**: Full email anonymization with domain preservation options
-- **Link & URL Anonymization**: 
-  - **Google Workspace**: Docs, Sheets, Slides, Drive, Meet, Calendar → [DOCS_LINK], [SHEETS_LINK], etc.
-  - **Development**: GitHub, GitLab, Stack Overflow, NPM, PyPI → [GITHUB_LINK], [GITLAB_LINK], etc.
-  - **Communication**: Slack, Discord, Zoom, Teams → [SLACK_LINK], [DISCORD_LINK], etc.
-  - **File Sharing**: Dropbox, OneDrive, Box, iCloud → [DROPBOX_LINK], [ONEDRIVE_LINK], etc.
-  - **Social Media**: LinkedIn, Twitter, Facebook, YouTube → [LINKEDIN_LINK], [TWITTER_LINK], etc.
-  - **Generic URLs**: All HTTP/HTTPS links, IP addresses, file paths
-- **File & Network Paths**: Anonymize file paths, network shares, and attachment names
-- **Company & Projects**: Replace organization names and sensitive project identifiers
-
-### **Advanced Anonymization Features**
-- **Interactive Mapping Interface**: User-friendly table for adding/removing custom mappings
-- **Smart Pattern Matching**: Multiple strategies (word boundaries, punctuation-aware, exact match)
-- **Live Preview**: Test anonymization with sample text before processing
-- **Anonymization Levels**: Choose between domain-aware ([GITHUB_LINK]) or full anonymization ([LINK])
-- **Comprehensive Coverage**: Processes main messages, quoted content, and attachments
-- **Export Options**: Save anonymized data while preserving originals
+**Comprehensive Protection:**
+- Names, emails, links, company/project names, file/network paths, attachments
+- Smart pattern matching (word boundaries, punctuation-aware, case-insensitive)
+- Interactive mapping interface and live preview
+- Export anonymized data while preserving originals
 
 ### 📊 Comprehensive Analytics
 - **Message Statistics**: See who sent how many messages
@@ -273,47 +237,31 @@ We welcome contributions! This project is open source and community-driven.
 
 4. **✅ Test Your Changes**
    ```bash
-   python run.py
-   # Test with sample data
-   ```
+## 🤝 Contributing
 
-5. **📝 Commit and Push**
-   ```bash
-   git add .
-   git commit -m "Add amazing new feature"
-   git push origin feature/amazing-new-feature
-   ```
+We welcome contributions! This project is open source and community-driven.
 
-6. **🔄 Create a Pull Request**
-   - Open a PR with a clear description
-   - Include screenshots for UI changes
-   - Reference any related issues
+### How to Contribute
+See the steps above in "Quick Start" for cloning and setup. To contribute:
+1. 🍴 Fork the repository
+2. 🌿 Create a feature branch
+3. 🔧 Make your changes (features, bug fixes, docs, tests)
+4. ✅ Test your changes
+5. 📝 Commit and push
+6. 🔄 Create a pull request (include clear description, screenshots for UI changes, reference issues)
 
-### **Areas We Need Help With**
-- 🌐 **Internationalization**: Multi-language support
-- 🎨 **UI/UX Improvements**: Better design and user experience  
-- 🔧 **New Anonymization Features**: Additional privacy protection methods
-- 📊 **Analytics Features**: More detailed statistics and insights
-- 🐛 **Bug Fixes**: Help us squash bugs and improve stability
-- 📖 **Documentation**: Improve guides, examples, and API docs
-- 🧪 **Testing**: Unit tests, integration tests, and test coverage
+### Areas We Need Help With
+- 🌐 Internationalization: Multi-language support
+- 🎨 UI/UX Improvements
+- 🔧 New Anonymization Features
+- 📊 Analytics Features
+- 🐛 Bug Fixes
+- 📖 Documentation
+- 🧪 Testing
 
-### **Development Setup**
-
+### Development Setup
+Refer to "Quick Start" above for environment setup. For development mode:
 ```bash
-# Clone the repository
-git clone https://github.com/gopichandbusam/google-chat-viewer.git
-cd google-chat-viewer
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install development dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # If available
-
-# Run in development mode
 streamlit run app.py --server.runOnSave true
 ```
 

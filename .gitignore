@@ -1,3 +1,5 @@
 # Byte-compiled / virtualenv
 venv/
 .venv/
+.github/
+__pycache__/
