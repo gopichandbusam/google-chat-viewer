@@ -145,6 +145,7 @@ The viewer runs in **manual anonymization mode only**, putting you in full contr
 ```
 google-chat-viewer/
 ├── app.py           # Main application
+├── ui.py            # UI components and layout
 ├── run.py           # Setup and launch script
 ├── requirements.txt # Dependencies
 ├── README.md        # This file
