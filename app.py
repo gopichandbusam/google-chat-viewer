@@ -596,12 +596,13 @@ def main() -> None:
     
     # Apply anonymization to data
     display_data = data
-    if should_anonymize and name_mappings:
-        with st.spinner("🔄 Applying anonymization..."):
-            display_data = apply_anonymization(data, name_mappings)
-        
-        # Always provide download option for anonymized data
-        st.success("✅ Anonymization applied successfully!")
+    if should_anonymize:
+        if name_mappings:
+            with st.spinner("🔄 Applying anonymization..."):
+                display_data = apply_anonymization(data, name_mappings)
+            st.success("✅ Anonymization applied successfully!")
+        else:
+            st.info("ℹ️ No anonymization mappings were created. The downloaded file will match the original data.")
         
         # Prepare filename
         name_parts = display_name.rsplit('.', 1)
@@ -610,20 +611,29 @@ def main() -> None:
         else:
             anonymized_filename = f"{display_name}_anonymized"
         
-        # Show download button
+        # Show download button for current display data
         json_str = json.dumps(display_data, indent=2, ensure_ascii=False)
         st.download_button(
             label="📥 Download Anonymized Data",
             data=json_str,
             file_name=anonymized_filename,
             mime="application/json",
-            help="Download the anonymized chat data as JSON",
+            help="Download the processed chat data as JSON",
             use_container_width=True,
             type="primary"
         )
+
+        # Preview anonymized data (first 50 lines) with option to expand
+        preview_lines = json_str.splitlines()
+        preview_snippet = "\n".join(preview_lines[:50]) if preview_lines else ""
+        st.write("**📄 Anonymized Data Preview (first 50 lines)**")
+        st.code(preview_snippet or "(empty)", language="json")
+        if len(preview_lines) > 50:
+            with st.expander("Show full anonymized JSON"):
+                st.code(json_str, language="json")
         
-        # Optional: Also save to same folder if requested
-        if save_option == "Save to same folder":
+        # Optional: Also save to same folder if requested (only when data changed)
+        if save_option == "Save to same folder" and name_mappings:
             try:
                 with open(anonymized_filename, 'w', encoding='utf-8') as f:
                     json.dump(display_data, f, indent=2, ensure_ascii=False)

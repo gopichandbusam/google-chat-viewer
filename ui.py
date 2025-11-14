@@ -12,6 +12,7 @@ License: MIT
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any, List
 from datetime import datetime
+from collections import Counter
 
 import streamlit as st
 
@@ -541,15 +542,41 @@ def render_existing_mappings() -> None:
         return
     
     st.write("**📋 Your Custom Mappings:**")
+    originals = [m['original'] for m in st.session_state.custom_mappings]
+    replacements = [m['replacement'] for m in st.session_state.custom_mappings]
+    duplicate_originals = {orig for orig, count in Counter(originals).items() if count > 1}
+    duplicate_replacements = {rep for rep, count in Counter(replacements).items() if count > 1}
+
+    if duplicate_originals or duplicate_replacements:
+        warning_lines = []
+        if duplicate_originals:
+            warning_lines.append(
+                "• Duplicate originals: " + ", ".join(sorted(duplicate_originals))
+            )
+        if duplicate_replacements:
+            warning_lines.append(
+                "• Duplicate replacements: " + ", ".join(sorted(duplicate_replacements))
+            )
+        st.warning(
+            "⚠️ Duplicate mappings detected. Please review to avoid conflicting replacements.\n" + "\n".join(warning_lines)
+        )
     
     for i, mapping in enumerate(st.session_state.custom_mappings):
         col1, col2, col3 = st.columns([4, 4, 1])
+        is_duplicate_original = mapping['original'] in duplicate_originals
+        is_duplicate_replacement = mapping['replacement'] in duplicate_replacements
         
         with col1:
-            st.write(f"**{mapping['original']}**")
+            label = mapping['original']
+            if is_duplicate_original:
+                label += " ⚠️"
+            st.write(f"**{label}**")
         
         with col2:
-            st.write(f"→ *{mapping['replacement']}*")
+            label = mapping['replacement']
+            if is_duplicate_replacement:
+                label += " ⚠️"
+            st.write(f"→ *{label}*")
         
         with col3:
             if st.button("🗑️", key=f"delete_mapping_{i}", help="Remove this mapping"):
@@ -704,6 +731,30 @@ def display_message_statistics(stats):
             # Extract the name and email from "Name (email)" format
             original_name = selected_participant.split(" (")[0]
             original_email = selected_participant.split(" (")[1].rstrip(")")
+            name_tokens = [token for token in original_name.split() if token]
+            first_initial = name_tokens[0][0] if name_tokens else ""
+            last_initial = name_tokens[-1][0] if len(name_tokens) > 1 else ""
+            if first_initial and last_initial:
+                initials = (first_initial + last_initial).upper()
+                suggested_email_local = (first_initial + last_initial).lower()
+            elif first_initial:
+                initials = first_initial.upper()
+                suggested_email_local = first_initial.lower()
+            else:
+                initials = "ANON"
+                suggested_email_local = "anon"
+            suggested_name = initials
+            suggested_email = f"{suggested_email_local}@email.com" if original_email != 'N/A' else ""
+            
+            # Reset defaults when participant selection changes
+            last_selection = st.session_state.get('quick_anon_last_selection')
+            if last_selection != selected_participant:
+                st.session_state['quick_anon_last_selection'] = selected_participant
+                st.session_state['quick_anon_name'] = suggested_name
+                if original_email != 'N/A':
+                    st.session_state['quick_anon_email'] = suggested_email
+                else:
+                    st.session_state['quick_anon_email'] = ""
             
             st.write("**Replace with:**")
             
@@ -713,6 +764,7 @@ def display_message_statistics(stats):
                 replacement_name = st.text_input(
                     "Name:",
                     placeholder="e.g., Person A, User 1, etc.",
+                    value=st.session_state.get('quick_anon_name', suggested_name),
                     key="quick_anon_name",
                     label_visibility="visible"
                 )
@@ -722,7 +774,7 @@ def display_message_statistics(stats):
                 replacement_email = st.text_input(
                     "Email:",
                     placeholder="e.g., persona@anon.com",
-                    value=f"anonymized_{len(st.session_state.get('custom_mappings', []))//2 + 1}@example.com" if original_email != 'N/A' else "",
+                    value=st.session_state.get('quick_anon_email', suggested_email) if original_email != 'N/A' else "",
                     key="quick_anon_email",
                     disabled=original_email == 'N/A',
                     label_visibility="visible"

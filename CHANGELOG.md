@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0] - 2025-11-07
 
+## [2.2.0] - 2025-11-13
+
+### 🚀 Added
+- **Quick Anonymization Panel**: Create name and email replacements directly from participant statistics
+- **Always-On Download Button**: Export anonymized data immediately after processing
+- **File Insight Messaging**: Display absolute path for local files and size/source details for uploads
+- **Session Clear Control**: One-click button to clear session state and cached data
+
+### 🛠️ Changed
+- **Manual-Only Anonymization**: Removed automatic and mixed modes to simplify workflow and improve predictability
+- **Email Coverage**: Ensured creator, quoted-message, reaction, and inline text emails honor custom mappings
+- **Documentation Refresh**: Updated README and guidance to reflect new UX and manual-first approach
+
+### 🐛 Fixed
+- **Email Display in Statistics**: Anonymized names now map back to original emails for correct column display
+- **Uploaded File Handling**: Resolved errors when using non-filesystem `UploadedFile` objects during save operations
+
 ### 🚀 Added
 - **Virtual Environment Management**: Complete setup with automated scripts
   - `setup.sh` - Automated environment setup and dependency installation

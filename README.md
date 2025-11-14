@@ -10,33 +10,26 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 
 ## 🚀 Features
 
-### � **Data Analysis & Visualization**
-- **Smart File Upload**: Drag-and-drop JSON files with validation and error handling
-- **Comprehensive Statistics**: Detailed analytics with message counts, activity patterns, and participation metrics
-- **Interactive Chat Interface**: View messages in a beautiful, paginated chat-like format
-- **Attachment Support**: Display and analyze attached file information
-- **Date Range Analysis**: Explore conversation timeframes and activity patterns
+### 📊 Data Analysis & Visualization
+- **Flexible File Intake**: Upload from browser or pick local files with instant validation and helpful path/size info
+- **Comprehensive Statistics**: Message counts, participation breakdown, activity ranges, and most-active-day insights
+- **Quick Anonymization Dashboard**: Build name and email replacements directly from the participant list
+- **Chat-Style Viewer**: Paginated message stream with quotes, reactions, and attachment highlights
+- **High-Capacity Processing**: Proven to handle Google Takeout exports 200 MB and larger on modest hardware
 
-### 🔒 **Advanced Privacy Protection**
-- **Multi-Level Anonymization**: Automatic, Manual, and Mixed anonymization modes
-- **Name & Identity Protection**: Replace names with Person 1, Person 2, etc. or custom mappings
-- **Email Anonymization**: Convert emails to person1@example.com, person2@example.com
-- **Comprehensive Link Anonymization**: 
-  - Google Services (Docs, Sheets, Drive, Meet, Calendar, etc.)
-  - Development platforms (GitHub, GitLab, Stack Overflow, etc.)
-  - Communication tools (Slack, Discord, Zoom, Teams, etc.)
-  - File sharing (Dropbox, OneDrive, Box, iCloud, etc.)
-  - Social media (LinkedIn, Twitter, Facebook, YouTube, etc.)
-  - Generic HTTP/HTTPS URLs, IP addresses, file paths
-- **Company & Project Protection**: Anonymize organization names and project identifiers
-- **Attachment Anonymization**: Sanitize filenames and metadata
+### 🔒 Privacy Controls
+- **Manual-First Anonymization**: You decide exactly what gets replaced via custom mappings and quick-add shortcuts
+- **Email Coverage Everywhere**: Creator fields, quoted messages, reactions, and message text all respect your mappings
+- **Link Scrubbing**: Domain-aware or fully generic link anonymization to remove sensitive URLs
+- **Filename Sanitizing**: Attachments and embedded references are cleaned alongside message content
+- **Download-Ready Output**: One-click download button and optional same-folder save keep exports under your control
 
-### 🛠️ **Technical Features**
-- **Performance Optimized**: Handle large chat histories (200MB+ files) efficiently
-- **Progress Tracking**: Visual feedback during processing with progress bars  
-- **Export Options**: Save anonymized data in JSON format for sharing
-- **Error Handling**: Robust validation with helpful error messages and recovery
-- **Cross-Platform**: Works on Windows, macOS, and Linux
+### 🧰 Productivity Enhancements
+- **Session Reset Button**: Clear memory and cached data instantly when switching files or starting fresh
+- **Duplicate Mapping Guardrails**: Automatic warnings when the same original or replacement is added twice
+- **Progress Feedback**: Spinners and status messages during parsing, statistics, and anonymization steps
+- **Error Guidance**: Friendly messaging for malformed JSON, missing fields, or encoding issues
+- **Cross-Platform Support**: Runs consistently on macOS, Windows, and Linux with Streamlit 1.28+
 
 ## Quick Start
 
@@ -122,41 +115,30 @@ google-chat-viewer/
 ### 📖 Need More Help?
 For detailed instructions, visit the [Google Takeout Tutorial](https://support.google.com/accounts/answer/3024190)
 
-## 🎭 Using Custom Name Mappings
+## 🎭 Using Custom Mappings
 
-The anonymization feature provides a powerful way to protect privacy:
+The viewer runs in **manual anonymization mode only**, putting you in full control.
 
-### **How to Add Custom Mappings:**
-1. **Enable anonymization** in the app
-2. **Expand "Custom Name Mappings"** section
-3. **Add mappings** using the table interface:
-   - Enter original text (e.g., "Gopichand Busam")
-   - Enter replacement (e.g., "Manager")
-   - Click "Add"
+### Quick Add From Statistics
+1. Load your chat file and review *Messages per Participant*
+2. Open **Quick Anonymization** to pick a participant from the list
+3. Supply replacement name and email (auto-suggested but editable)
+4. Click **Add** to store both mappings instantly
 
-### **What Gets Replaced:**
-- ✅ **Sender names** in chat messages
-- ✅ **Names within message text** (e.g., "Hey Gopichand, how are you?")
-- ✅ **Quoted message content**
-- ✅ **Attachment file names**
-- ✅ **Company names, project names, any text**
+### Manual Mapping Table
+- Expand **Custom Name Mappings** to add or edit arbitrary replacements
+- Use it for project names, locations, or any other sensitive text
+- Remove entries with a single click when no longer needed
 
-### **Examples of Useful Mappings:**
-```
-Original Text         →  Replacement
-Gopichand Busam       →  Manager
-John Smith            →  Developer
-Acme Corporation      →  Company A
-Project Phoenix       →  Project X
-confidential-data.pdf →  document.pdf
-```
+### Coverage
+- ✅ Creator names and emails
+- ✅ Message text, quotes, reactions, and attachments
+- ✅ Participant statistics (email column uses original-name lookups)
 
-### **Smart Matching:**
-The app uses intelligent pattern matching:
-- **Word boundaries**: "John" won't replace "Johnson"
-- **Case insensitive**: Matches "john", "John", "JOHN"
-- **Punctuation aware**: Handles "John," and "John!" correctly
-- **Multi-word support**: "John Smith" replaces the full name
+### Smart Matching
+- **Word boundaries** protect substrings such as "John" vs "Johnson"
+- **Case-insensitive** replacements cover "john", "JOHN", etc.
+- **Punctuation-aware** rules handle commas, quotes, and multi-word phrases
 
 #### File Structure
 ```
@@ -172,16 +154,12 @@ google-chat-viewer/
 
 ### 🔒 Advanced Data Anonymization
 
-**Multi-Mode System:**
-- 🤖 Automatic: Auto-generate replacements (Person 1, person1@example.com, [GITHUB_LINK])
-- ✋ Manual: Only anonymize what you specify with custom mappings
-- 🔀 Mixed: Combine automatic and custom replacements
-
-**Comprehensive Protection:**
-- Names, emails, links, company/project names, file/network paths, attachments
-- Smart pattern matching (word boundaries, punctuation-aware, case-insensitive)
-- Interactive mapping interface and live preview
-- Export anonymized data while preserving originals
+- **Manual-Only Workflow**: Transparent replacements driven entirely by your mapping list
+- **Quick Add UX**: Build mappings straight from participant statistics for rapid setup
+- **Smart Defaults**: Initials-based name/email suggestions when selecting a participant to anonymize
+- **Comprehensive Protection**: Names, emails, links, company/project names, file/network paths, attachments
+- **Smart Pattern Matching**: Word boundaries, punctuation awareness, and case-insensitive replacements
+- **Download & Preview Options**: Immediate download button, first-50-line JSON preview, and optional same-folder write-out
 
 ### 📊 Comprehensive Analytics
 - **Message Statistics**: See who sent how many messages
