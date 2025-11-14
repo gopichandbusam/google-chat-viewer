@@ -83,6 +83,7 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 ```
 google-chat-viewer/
 ├── app.py           # Main application
+├── ui.py            # UI components and layout
 ├── run.py           # Setup and launch script
 ├── requirements.txt # Dependencies
 ├── README.md        # This file
