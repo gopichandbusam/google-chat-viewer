@@ -9,8 +9,10 @@ Version: 2.0
 License: MIT
 """
 
+import json
+import re
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any, List
+from typing import Dict, Optional, Tuple, Any, List, Pattern
 from datetime import datetime
 from collections import Counter
 
@@ -23,6 +25,156 @@ from app import (
     DEFAULT_TARGET_FILENAME, DEFAULT_MESSAGES_PER_PAGE,
     DEFAULT_MAX_PREVIEW_LENGTH, DEFAULT_EMAIL_DOMAIN
 )
+
+
+# ===== HELPER FUNCTIONS =====
+
+def compile_mappings(name_mappings: Dict[str, str]) -> List[Tuple[str, str, Pattern, Pattern, Pattern]]:
+    """
+    Pre-compile regex patterns for all mappings to improve performance.
+    Returns a list of tuples: (original, replacement, word_pattern, punct_pattern, exact_pattern)
+    """
+    if not name_mappings:
+        return []
+        
+    # Sort by length (longest first) to prevent partial replacements
+    sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    compiled = []
+    for original, replacement in sorted_mappings:
+        # 1. Word boundaries
+        word_pattern = re.compile(r'\b' + re.escape(original) + r'\b', flags=re.IGNORECASE)
+        # 2. Punctuation-aware
+        punct_pattern = re.compile(r'(?<=["\'\s])' + re.escape(original) + r'(?=["\'\s\.,!?])', flags=re.IGNORECASE)
+        # 3. Exact match (for multi-word)
+        exact_pattern = re.compile(re.escape(original), flags=re.IGNORECASE)
+        
+        compiled.append((original, replacement, word_pattern, punct_pattern, exact_pattern))
+        
+    return compiled
+
+
+def parse_chat_message(message, name_mappings=None, compiled_mappings=None):
+    """Parse a single message from JSON and extract key data."""
+    try:
+        if not isinstance(message, dict):
+            return None
+            
+        if 'creator' not in message or 'name' not in message['creator']:
+            return None
+        
+        sender_name = message['creator']['name']
+        original_name = sender_name
+        
+        # Extract email from creator if available
+        creator_email = message['creator'].get('email')
+        
+        if name_mappings and sender_name in name_mappings:
+            sender_name = name_mappings[sender_name]
+        
+        # Parse timestamp
+        try:
+            date_str = message['created_date']
+            if " at " in date_str:
+                date_str = date_str.replace(" at ", " ").replace("\u202f", " ")
+            timestamp = datetime.strptime(date_str, "%A, %B %d, %Y %I:%M:%S %p %Z")
+        except (KeyError, ValueError) as e:
+            timestamp = datetime.now()
+        
+        text = message.get('text', '')
+        if not isinstance(text, str):
+            text = str(text) if text is not None else ''
+        
+        # Apply anonymization to text
+        if compiled_mappings and text:
+            for original, replacement, word_pattern, _, _ in compiled_mappings:
+                if original.lower() in text.lower():
+                    if '@' in original:
+                        text = re.sub(re.escape(original), replacement, text, flags=re.IGNORECASE)
+                    else:
+                        text = word_pattern.sub(replacement, text)
+        elif name_mappings and text:
+            # Fallback for backward compatibility
+            sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
+            for original, replacement in sorted_mappings:
+                if original.lower() in text.lower():
+                    word_pattern = r'\b' + re.escape(original) + r'\b'
+                    text = re.sub(word_pattern, replacement, text, flags=re.IGNORECASE)
+
+        # Process attachments
+        attachment_md = ""
+        try:
+            if 'attached_files' in message and isinstance(message['attached_files'], list):
+                for f in message['attached_files']:
+                    if isinstance(f, dict):
+                        name = f.get('original_name', 'Attached File')
+                        name = str(name)[:100]
+                        attachment_md += f"\n\n> 📎 **Attachment:** `{name}`"
+        except Exception:
+            pass
+        
+        # Process reactions
+        reactions_md = ""
+        try:
+            if 'reactions' in message and isinstance(message['reactions'], list):
+                reaction_list = []
+                for reaction in message['reactions']:
+                    if isinstance(reaction, dict):
+                        emoji = reaction.get('emoji', {}).get('unicode', '▫️')
+                        count = len(reaction.get('reactor_emails', []))
+                        if count > 0:
+                            reaction_list.append(f"{emoji} {count}")
+                if reaction_list:
+                    reactions_md = "\n\n" + " ".join(reaction_list)
+        except Exception:
+            pass
+        
+        # Process quoted messages
+        quote_md = ""
+        try:
+            if 'quoted_message_metadata' in message:
+                quoted_msg = message['quoted_message_metadata']
+                if isinstance(quoted_msg, dict):
+                    quote_author = quoted_msg.get('creator', {}).get('name', 'Someone')
+                    quote_text = quoted_msg.get('text', '...')
+                    
+                    if name_mappings and quote_author in name_mappings:
+                        quote_author = name_mappings[quote_author]
+                    
+                    if isinstance(quote_text, str) and quote_text.strip():
+                        quote_text = quote_text.strip()
+                        
+                        if compiled_mappings:
+                            for original, replacement, word_pattern, _, _ in compiled_mappings:
+                                if original.lower() in quote_text.lower():
+                                    if '@' in original:
+                                        quote_text = re.sub(re.escape(original), replacement, quote_text, flags=re.IGNORECASE)
+                                    else:
+                                        quote_text = word_pattern.sub(replacement, quote_text)
+                        elif name_mappings:
+                            sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
+                            for original, replacement in sorted_mappings:
+                                if original.lower() in quote_text.lower():
+                                    word_pattern = r'\b' + re.escape(original) + r'\b'
+                                    quote_text = re.sub(word_pattern, replacement, quote_text, flags=re.IGNORECASE)
+                        
+                        if len(quote_text) > 100:
+                            quote_text = quote_text[:100] + "..."
+                        quote_md = f"> **{quote_author} said:**\n> {quote_text}\n\n"
+        except Exception:
+            pass
+
+        return {
+            'name': sender_name,
+            'timestamp': timestamp,
+            'full_text': f"{quote_md}{text}{attachment_md}{reactions_md}",
+            'original_name': original_name,
+            'email': creator_email
+        }
+
+    except Exception as e:
+        print(f"Error parsing message: {e}")
+        return None
 
 
 # ===== INITIALIZATION & SETTINGS =====
@@ -465,6 +617,9 @@ def show_custom_mapping_interface() -> None:
     # Add new mapping section
     render_add_mapping_interface()
     
+    # Bulk import section
+    render_bulk_import_interface()
+    
     # Display existing mappings
     render_existing_mappings()
     
@@ -533,6 +688,72 @@ def handle_add_mapping(original: str, replacement: str) -> None:
     st.session_state.custom_mappings.append(new_mapping)
     st.success(f"✅ Added mapping: `{original_clean}` → `{replacement_clean}`")
     st.rerun()
+
+
+def render_bulk_import_interface() -> None:
+    """Render the bulk import interface for custom mappings."""
+    with st.expander("📥 Bulk Import Mappings (Key-Value Pairs)", expanded=False):
+        st.info("Paste multiple mappings (one per line). Supported separators: `->`, `:`, `,`, `=`")
+        st.caption("Format: `Original Text -> Replacement Text`")
+        
+        bulk_text = st.text_area(
+            "Paste mappings here:", 
+            height=150, 
+            placeholder="John Smith -> Person A\njane@example.com : user@anon.com\nProject X, Project Alpha",
+            key="bulk_mapping_input"
+        )
+        
+        if st.button("Import Mappings", type="primary", use_container_width=True):
+            if not bulk_text.strip():
+                st.warning("⚠️ Please enter some text to import")
+                return
+                
+            count = 0
+            duplicates = 0
+            
+            # Get existing originals to check for duplicates
+            existing_originals = {m['original'].lower() for m in st.session_state.custom_mappings}
+            
+            for line in bulk_text.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                # Try different separators
+                parts = None
+                if '->' in line:
+                    parts = line.split('->', 1)
+                elif ':' in line:
+                    parts = line.split(':', 1)
+                elif '=' in line:
+                    parts = line.split('=', 1)
+                elif ',' in line:
+                    parts = line.split(',', 1)
+                
+                if parts and len(parts) == 2:
+                    orig = parts[0].strip()
+                    repl = parts[1].strip()
+                    
+                    if orig and repl:
+                        if orig.lower() in existing_originals:
+                            duplicates += 1
+                        else:
+                            st.session_state.custom_mappings.append({
+                                'original': orig,
+                                'replacement': repl
+                            })
+                            existing_originals.add(orig.lower())
+                            count += 1
+            
+            if count > 0:
+                st.success(f"✅ Successfully imported {count} mappings!")
+                if duplicates > 0:
+                    st.warning(f"⚠️ Skipped {duplicates} duplicate mappings")
+                st.rerun()
+            elif duplicates > 0:
+                st.warning(f"⚠️ All {duplicates} mappings were duplicates and skipped")
+            else:
+                st.error("❌ No valid mappings found. Please check the format.")
 
 
 def render_existing_mappings() -> None:
@@ -764,7 +985,6 @@ def display_message_statistics(stats):
                 replacement_name = st.text_input(
                     "Name:",
                     placeholder="e.g., Person A, User 1, etc.",
-                    value=st.session_state.get('quick_anon_name', suggested_name),
                     key="quick_anon_name",
                     label_visibility="visible"
                 )
@@ -774,7 +994,6 @@ def display_message_statistics(stats):
                 replacement_email = st.text_input(
                     "Email:",
                     placeholder="e.g., persona@anon.com",
-                    value=st.session_state.get('quick_anon_email', suggested_email) if original_email != 'N/A' else "",
                     key="quick_anon_email",
                     disabled=original_email == 'N/A',
                     label_visibility="visible"
@@ -844,7 +1063,9 @@ def display_processed_messages(data: Dict[str, Any], name_mappings: Dict[str, st
         data: Chat data (original or anonymized)  
         name_mappings: Anonymization mappings applied
     """
-    from app import parse_chat_message
+    
+    # Pre-compile mappings for display performance
+    compiled_mappings = compile_mappings(name_mappings) if name_mappings else None
     
     # Process messages with progress tracking
     parsed_messages = []
@@ -857,7 +1078,7 @@ def display_processed_messages(data: Dict[str, Any], name_mappings: Dict[str, st
     
     with st.spinner("📝 Processing messages..."):
         for i, msg in enumerate(data['messages']):
-            parsed_msg = parse_chat_message(msg, name_mappings)
+            parsed_msg = parse_chat_message(msg, name_mappings, compiled_mappings)
             if parsed_msg:
                 parsed_messages.append(parsed_msg)
             
@@ -1007,9 +1228,6 @@ def load_and_validate_chat_data(file_path, display_name: str) -> Optional[Dict[s
     Returns:
         Optional[Dict[str, Any]]: Parsed JSON data or None
     """
-    import json
-    from pathlib import Path
-    
     # Show file info
     if isinstance(file_path, str):
         st.info(f"📄 Loading: **{display_name}**")

@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-12-02
+
+### ⚡ Performance
+- **Optimized Anonymization Engine**: Implemented pre-compiled regex patterns and efficient looping, significantly reducing processing time for large datasets.
+- **Faster Data Handling**: Switched to optimized object copying methods for better memory usage and speed.
+
+### 🛠️ Refactoring
+- **Modular Architecture**: Moved core parsing and mapping logic (`parse_chat_message`, `compile_mappings`) to `ui.py` to resolve circular dependencies and improve code organization.
+- **Clean Imports**: Streamlined import statements across the application.
+
+### 🐛 Fixed
+- **Session State Warning**: Resolved Streamlit widget warning in the Quick Anonymization panel by decoupling widget values from session state.
+
+## [2.3.0] - 2025-11-14
+
+### 🚀 Added
+- **Bulk Import Interface**: Paste key-value pairs (e.g., "Name=Alias") to create multiple mappings at once.
+- **Smart Quick Anonymization**: Auto-generates initials (e.g., "John Doe" -> "J.D.") and domain-based email replacements.
+- **Duplicate Detection**: Warns users if a mapping for a specific name or email already exists.
+- **Collapsible Data Preview**: Anonymized JSON preview is now hidden by default in an expander to reduce clutter.
+
+### 🛠️ Changed
+- **UI Refinements**: Improved layout for mapping tools and preview sections.
+
 ## [2.1.0] - 2025-11-07
 
 ## [2.2.0] - 2025-11-13

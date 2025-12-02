@@ -13,16 +13,18 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
 ### 📊 Data Analysis & Visualization
 - **Flexible File Intake**: Upload from browser or pick local files with instant validation and helpful path/size info
 - **Comprehensive Statistics**: Message counts, participation breakdown, activity ranges, and most-active-day insights
-- **Quick Anonymization Dashboard**: Build name and email replacements directly from the participant list
+- **Quick Anonymization Dashboard**: Smart auto-suggestions for initials and emails directly from the participant list
 - **Chat-Style Viewer**: Paginated message stream with quotes, reactions, and attachment highlights
-- **High-Capacity Processing**: Proven to handle Google Takeout exports 200 MB and larger on modest hardware
+- **High-Performance Processing**: Optimized engine with pre-compiled patterns handles large Google Takeout exports efficiently
 
 ### 🔒 Privacy Controls
 - **Manual-First Anonymization**: You decide exactly what gets replaced via custom mappings and quick-add shortcuts
+- **Bulk Import**: Paste key-value pairs to create multiple mappings instantly
 - **Email Coverage Everywhere**: Creator fields, quoted messages, reactions, and message text all respect your mappings
 - **Link Scrubbing**: Domain-aware or fully generic link anonymization to remove sensitive URLs
 - **Filename Sanitizing**: Attachments and embedded references are cleaned alongside message content
 - **Download-Ready Output**: One-click download button and optional same-folder save keep exports under your control
+- **Collapsible Preview**: Inspect your anonymized JSON data without cluttering the interface
 
 ### 🧰 Productivity Enhancements
 - **Session Reset Button**: Clear memory and cached data instantly when switching files or starting fresh

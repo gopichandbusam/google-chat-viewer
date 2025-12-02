@@ -21,10 +21,11 @@ This software is provided "AS IS" without warranty. Use at your own risk.
 # Standard library imports
 import json
 import re
+import copy
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Pattern
 
 # Third-party imports
 import streamlit as st
@@ -46,14 +47,15 @@ DEFAULT_MAX_PREVIEW_LENGTH = 100
 # Anonymization configuration
 DEFAULT_EMAIL_DOMAIN = "example.com"
 EMAIL_PATTERN = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+EMAIL_REGEX = re.compile(EMAIL_PATTERN)
 
 # Google Drive link patterns
 DRIVE_LINK_PATTERNS = {
-    'docs': r'https://docs\.google\.com/document/d/([a-zA-Z0-9-_]+)',
-    'sheets': r'https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9-_]+)', 
-    'slides': r'https://docs\.google\.com/presentation/d/([a-zA-Z0-9-_]+)',
-    'forms': r'https://docs\.google\.com/forms/d/([a-zA-Z0-9-_]+)',
-    'drive': r'https://drive\.google\.com/(?:file/d/|open\?id=)([a-zA-Z0-9-_]+)'
+    'docs': re.compile(r'https://docs\.google\.com/document/d/([a-zA-Z0-9-_]+)'),
+    'sheets': re.compile(r'https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9-_]+)'), 
+    'slides': re.compile(r'https://docs\.google\.com/presentation/d/([a-zA-Z0-9-_]+)'),
+    'forms': re.compile(r'https://docs\.google\.com/forms/d/([a-zA-Z0-9-_]+)'),
+    'drive': re.compile(r'https://drive\.google\.com/(?:file/d/|open\?id=)([a-zA-Z0-9-_]+)')
 }
 # =====================================
 
@@ -106,69 +108,17 @@ def create_anonymization_mappings(data: Dict[str, Any], custom_mappings: Optiona
     """
     if mode != "manual":
         st.warning("⚠️ Only manual mode is supported. Using manual mode.")
-        mode = "manual"
     
     if custom_mappings is None:
         custom_mappings = {}
     
     try:
-        names, emails = _extract_entities_from_messages(data)
-        
         # Manual mode: return custom mappings as-is
-        # custom_mappings is already a dict of {original: replacement}
-        all_mappings = dict(custom_mappings)
-        
-        # Log statistics
-        print(f"Anonymization Statistics:")
-        print(f"  Mode: {mode}")
-        print(f"  Names found: {len(names)}")
-        print(f"  Emails found: {len(emails)}")
-        print(f"  Total entities: {len(names) + len(emails)}")
-        print(f"  Entities mapped: {len(all_mappings)}")
-        
-        return all_mappings
-        print(f"  Entities mapped: {len(all_mappings)}")
-        
-        return all_mappings
+        return dict(custom_mappings)
         
     except Exception as e:
         st.error(f"❌ Error creating anonymization mappings: {str(e)}")
         return {}
-
-
-def _extract_entities_from_messages(data: Dict[str, Any]) -> Tuple[set, set]:
-    """
-    Extract all unique names and email addresses from chat messages.
-    
-    Args:
-        data: Parsed JSON chat data
-        
-    Returns:
-        Tuple[set, set]: (unique_names, unique_emails)
-    """
-    names = set()
-    emails = set()
-    
-    messages = data.get('messages', [])
-    if not messages:
-        st.warning("⚠️ No messages found in data")
-        return names, emails
-    
-    for message in messages:
-        # Extract names
-        if 'creator' in message and 'name' in message['creator']:
-            creator_name = message['creator']['name'].strip()
-            if creator_name:
-                names.add(creator_name)
-        
-        # Extract emails
-        if 'text' in message and message['text']:
-            text = message['text']
-            found_emails = re.findall(EMAIL_PATTERN, text)
-            valid_emails = {email.strip().lower() for email in found_emails if '@' in email and '.' in email.split('@')[1]}
-            emails.update(valid_emails)
-    
-    return names, emails
 
 
 def anonymize_all_links(text: str, anonymization_level: str = "domain") -> str:
@@ -185,33 +135,26 @@ def anonymize_all_links(text: str, anonymization_level: str = "domain") -> str:
     if not text or not isinstance(text, str):
         return text
     
-    # Comprehensive link patterns
-    link_patterns = {
-        'google_docs': (r'https://docs\.google\.com/document/d/[a-zA-Z0-9-_]+[^\s]*', '[DOCS_LINK]'),
-        'google_sheets': (r'https://docs\.google\.com/spreadsheets/d/[a-zA-Z0-9-_]+[^\s]*', '[SHEETS_LINK]'),
-        'google_slides': (r'https://docs\.google\.com/presentation/d/[a-zA-Z0-9-_]+[^\s]*', '[SLIDES_LINK]'),
-        'google_forms': (r'https://docs\.google\.com/forms/d/[a-zA-Z0-9-_]+[^\s]*', '[FORMS_LINK]'),
-        'google_drive': (r'https://drive\.google\.com/[^\s]*', '[DRIVE_LINK]'),
-        'google_meet': (r'https://meet\.google\.com/[^\s]*', '[MEET_LINK]'),
-        'github': (r'https://(?:www\.)?github\.com/[^\s]*', '[GITHUB_LINK]'),
-        'slack': (r'https://[a-zA-Z0-9.-]+\.slack\.com/[^\s]*', '[SLACK_LINK]'),
-        'zoom': (r'https://[a-zA-Z0-9.-]*\.zoom\.us/[^\s]*', '[ZOOM_LINK]'),
-        'generic_https': (r'https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*', '[HTTPS_LINK]'),
-        'generic_http': (r'http://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*', '[HTTP_LINK]'),
-    }
-    
     if anonymization_level == "full":
-        generic_replacements = {
-            'web_url': (r'https?://[^\s]+', '[LINK]'),
-            'email': (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL]'),
-        }
-        
-        for pattern_name, (pattern, replacement) in generic_replacements.items():
-            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        text = re.sub(r'https?://[^\s]+', '[LINK]', text, flags=re.IGNORECASE)
+        text = EMAIL_REGEX.sub('[EMAIL]', text)
     else:
-        for service_name, (pattern, replacement) in link_patterns.items():
-            if re.search(pattern, text, flags=re.IGNORECASE):
-                text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        # Domain-aware replacements using pre-compiled patterns
+        for service_name, pattern in DRIVE_LINK_PATTERNS.items():
+            if pattern.search(text):
+                text = pattern.sub(f'[{service_name.upper()}_LINK]', text)
+        
+        # Other common services
+        replacements = [
+            (r'https://(?:www\.)?github\.com/[^\s]*', '[GITHUB_LINK]'),
+            (r'https://[a-zA-Z0-9.-]+\.slack\.com/[^\s]*', '[SLACK_LINK]'),
+            (r'https://[a-zA-Z0-9.-]*\.zoom\.us/[^\s]*', '[ZOOM_LINK]'),
+            (r'https://meet\.google\.com/[^\s]*', '[MEET_LINK]'),
+            (r'https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*', '[HTTPS_LINK]'),
+            (r'http://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*', '[HTTP_LINK]'),
+        ]
+        for pattern, replacement in replacements:
+             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     
     return text
 
@@ -227,11 +170,15 @@ def apply_anonymization(data: Dict[str, Any], name_mappings: Dict[str, str]) -> 
     Returns:
         Dict[str, Any]: Fully anonymized copy of the original data
     """
+    from ui import compile_mappings
     try:
-        anonymized_data = json.loads(json.dumps(data))  # Deep copy
+        anonymized_data = copy.deepcopy(data)
         
-        # Sort mappings by length (longest first)
-        sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
+        # Pre-compile mappings
+        compiled_mappings = compile_mappings(name_mappings)
+        
+        link_anonymization = st.session_state.get('link_anonymization', True)
+        link_level = st.session_state.get('link_level', 'domain')
         
         # Anonymize messages
         for message in anonymized_data.get('messages', []):
@@ -251,27 +198,22 @@ def apply_anonymization(data: Dict[str, Any], name_mappings: Dict[str, str]) -> 
             if 'quoted_message_metadata' in message:
                 quoted_creator = message['quoted_message_metadata'].get('creator', {})
                 if 'name' in quoted_creator:
-                    original_name = quoted_creator['name']
-                    if original_name in name_mappings:
-                        quoted_creator['name'] = name_mappings[original_name]
+                    if quoted_creator['name'] in name_mappings:
+                        quoted_creator['name'] = name_mappings[quoted_creator['name']]
                 
                 if 'email' in quoted_creator:
-                    original_email = quoted_creator['email']
-                    if original_email in name_mappings:
-                        quoted_creator['email'] = name_mappings[original_email]
+                    if quoted_creator['email'] in name_mappings:
+                        quoted_creator['email'] = name_mappings[quoted_creator['email']]
                 
                 if 'text' in message['quoted_message_metadata']:
                     quoted_text = message['quoted_message_metadata']['text']
-                    for original, replacement in sorted_mappings:
-                        # Handle emails differently from names
+                    for original, replacement, word_pattern, _, _ in compiled_mappings:
                         if '@' in original:
-                            email_pattern = re.escape(original)
-                            quoted_text = re.sub(email_pattern, replacement, quoted_text, flags=re.IGNORECASE)
+                            quoted_text = re.sub(re.escape(original), replacement, quoted_text, flags=re.IGNORECASE)
                         else:
-                            quoted_text = re.sub(r'\b' + re.escape(original) + r'\b', replacement, quoted_text, flags=re.IGNORECASE)
+                            quoted_text = word_pattern.sub(replacement, quoted_text)
                     
-                    if st.session_state.get('link_anonymization', True):
-                        link_level = st.session_state.get('link_level', 'domain')
+                    if link_anonymization:
                         quoted_text = anonymize_all_links(quoted_text, link_level)
                     message['quoted_message_metadata']['text'] = quoted_text
             
@@ -279,30 +221,17 @@ def apply_anonymization(data: Dict[str, Any], name_mappings: Dict[str, str]) -> 
             if 'text' in message and message['text']:
                 text = message['text']
                 
-                for original, replacement in sorted_mappings:
+                for original, replacement, word_pattern, punct_pattern, exact_pattern in compiled_mappings:
                     if original.lower() in text.lower():
-                        # Check if it's an email address (contains @)
                         if '@' in original:
-                            # For emails, use a simpler pattern that doesn't require word boundaries
-                            email_pattern = re.escape(original)
-                            text = re.sub(email_pattern, replacement, text, flags=re.IGNORECASE)
+                            text = re.sub(re.escape(original), replacement, text, flags=re.IGNORECASE)
                         else:
-                            # For names, use word boundaries
-                            word_pattern = r'\b' + re.escape(original) + r'\b'
-                            text = re.sub(word_pattern, replacement, text, flags=re.IGNORECASE)
-                            
-                            # Punctuation-aware
-                            punct_pattern = r'(?<=["\'\s])' + re.escape(original) + r'(?=["\'\s\.,!?])'
-                            text = re.sub(punct_pattern, replacement, text, flags=re.IGNORECASE)
-                            
-                            # Exact match for multi-word
+                            text = word_pattern.sub(replacement, text)
+                            text = punct_pattern.sub(replacement, text)
                             if len(original.split()) > 1:
-                                exact_pattern = re.escape(original)
-                                text = re.sub(exact_pattern, replacement, text, flags=re.IGNORECASE)
+                                text = exact_pattern.sub(replacement, text)
                 
-                # Anonymize links
-                if st.session_state.get('link_anonymization', True):
-                    link_level = st.session_state.get('link_level', 'domain')
+                if link_anonymization:
                     text = anonymize_all_links(text, link_level)
                 
                 message['text'] = text
@@ -311,20 +240,16 @@ def apply_anonymization(data: Dict[str, Any], name_mappings: Dict[str, str]) -> 
             if 'reactions' in message:
                 for reaction in message['reactions']:
                     if 'reactor_emails' in reaction:
-                        anonymized_reactor_emails = []
-                        for email in reaction['reactor_emails']:
-                            if email in name_mappings:
-                                anonymized_reactor_emails.append(name_mappings[email])
-                            else:
-                                anonymized_reactor_emails.append(email)
-                        reaction['reactor_emails'] = anonymized_reactor_emails
+                        reaction['reactor_emails'] = [
+                            name_mappings.get(email, email) for email in reaction['reactor_emails']
+                        ]
             
             # 5. Anonymize attachments
             if 'attached_files' in message:
                 for attachment in message['attached_files']:
                     if 'original_name' in attachment:
                         file_name = attachment['original_name']
-                        for original, replacement in sorted_mappings:
+                        for original, replacement, _, _, _ in compiled_mappings:
                             file_name = re.sub(re.escape(original), replacement, file_name, flags=re.IGNORECASE)
                         attachment['original_name'] = file_name
         
@@ -424,117 +349,7 @@ def create_message_statistics(messages):
         return {}
 
 
-# ===== MESSAGE PARSING =====
 
-def parse_chat_message(message, name_mappings=None):
-    """Parse a single message from JSON and extract key data."""
-    try:
-        if not isinstance(message, dict):
-            return None
-            
-        if 'creator' not in message or 'name' not in message['creator']:
-            return None
-        
-        sender_name = message['creator']['name']
-        original_name = sender_name
-        
-        # Extract email from creator if available
-        creator_email = None
-        if 'email' in message['creator']:
-            creator_email = message['creator']['email']
-        
-        if name_mappings and sender_name in name_mappings:
-            sender_name = name_mappings[sender_name]
-        
-        # Parse timestamp
-        try:
-            date_str = message['created_date']
-            date_str_clean = date_str.replace(" at ", " ").replace("\u202f", " ")
-            date_format = "%A, %B %d, %Y %I:%M:%S %p %Z"
-            timestamp = datetime.strptime(date_str_clean, date_format)
-        except (KeyError, ValueError) as e:
-            timestamp = datetime.now()
-            print(f"Warning: Could not parse date: {e}")
-        
-        text = message.get('text', '')
-        if not isinstance(text, str):
-            text = str(text) if text is not None else ''
-        
-        # Apply anonymization to text
-        if name_mappings and text:
-            sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
-            for original, replacement in sorted_mappings:
-                if original.lower() in text.lower():
-                    word_pattern = r'\b' + re.escape(original) + r'\b'
-                    text = re.sub(word_pattern, replacement, text, flags=re.IGNORECASE)
-
-        # Process attachments
-        attachment_md = ""
-        try:
-            if 'attached_files' in message and isinstance(message['attached_files'], list):
-                for f in message['attached_files']:
-                    if isinstance(f, dict):
-                        name = f.get('original_name', 'Attached File')
-                        name = str(name)[:100]
-                        attachment_md += f"\n\n> 📎 **Attachment:** `{name}`"
-        except Exception as e:
-            print(f"Warning: Error processing attachments: {e}")
-        
-        # Process reactions
-        reactions_md = ""
-        try:
-            if 'reactions' in message and isinstance(message['reactions'], list):
-                reaction_list = []
-                for reaction in message['reactions']:
-                    if isinstance(reaction, dict):
-                        emoji = reaction.get('emoji', {}).get('unicode', '▫️')
-                        count = len(reaction.get('reactor_emails', []))
-                        if count > 0:
-                            reaction_list.append(f"{emoji} {count}")
-                if reaction_list:
-                    reactions_md = "\n\n" + " ".join(reaction_list)
-        except Exception as e:
-            print(f"Warning: Error processing reactions: {e}")
-        
-        # Process quoted messages
-        quote_md = ""
-        try:
-            if 'quoted_message_metadata' in message:
-                quoted_msg = message['quoted_message_metadata']
-                if isinstance(quoted_msg, dict):
-                    quote_author = quoted_msg.get('creator', {}).get('name', 'Someone')
-                    quote_text = quoted_msg.get('text', '...')
-                    
-                    if name_mappings and quote_author in name_mappings:
-                        quote_author = name_mappings[quote_author]
-                    
-                    if isinstance(quote_text, str) and quote_text.strip():
-                        quote_text = quote_text.strip()
-                        
-                        if name_mappings:
-                            sorted_mappings = sorted(name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
-                            for original, replacement in sorted_mappings:
-                                if original.lower() in quote_text.lower():
-                                    word_pattern = r'\b' + re.escape(original) + r'\b'
-                                    quote_text = re.sub(word_pattern, replacement, quote_text, flags=re.IGNORECASE)
-                        
-                        if len(quote_text) > 100:
-                            quote_text = quote_text[:100] + "..."
-                        quote_md = f"> **{quote_author} said:**\n> {quote_text}\n\n"
-        except Exception as e:
-            print(f"Warning: Error processing quoted message: {e}")
-
-        return {
-            'name': sender_name,
-            'timestamp': timestamp,
-            'full_text': f"{quote_md}{text}{attachment_md}{reactions_md}",
-            'original_name': original_name,
-            'email': creator_email
-        }
-
-    except Exception as e:
-        print(f"Error parsing message: {e}")
-        return None
 
 
 # ===== MAIN APPLICATION =====
@@ -547,7 +362,7 @@ def main() -> None:
         render_application_header, render_usage_instructions,
         select_json_file, load_and_validate_chat_data,
         anonymize_data_interface, display_message_statistics,
-        display_processed_messages
+        display_processed_messages, compile_mappings, parse_chat_message
     )
     
     # Initialize
@@ -564,7 +379,7 @@ def main() -> None:
         st.stop()
     
     # Load data
-    data = load_and_validate_chat_data(selected_file, display_name)
+    data = load_and_validate_chat_data(selected_file, display_name) # pyright: ignore[reportArgumentType]
     if not data:
         return
     
@@ -572,9 +387,12 @@ def main() -> None:
     should_anonymize, custom_mappings, save_option, anonymization_mode = anonymize_data_interface()
     
     name_mappings = {}
+    compiled_mappings = []
+    
     if should_anonymize:
         with st.spinner("🔒 Creating anonymization mappings..."):
-            name_mappings = create_anonymization_mappings(data, custom_mappings, anonymization_mode)
+            name_mappings = create_anonymization_mappings(data, custom_mappings, anonymization_mode) # pyright: ignore[reportArgumentType]
+            compiled_mappings = compile_mappings(name_mappings)
             
         if name_mappings:
             st.success(f"✅ Created {len(name_mappings)} anonymization mappings")
@@ -586,7 +404,7 @@ def main() -> None:
         # Parse messages first for statistics
         parsed_messages = []
         for msg in data['messages']:
-            parsed_msg = parse_chat_message(msg, name_mappings)
+            parsed_msg = parse_chat_message(msg, name_mappings, compiled_mappings)
             if parsed_msg:
                 parsed_messages.append(parsed_msg)
         
@@ -605,7 +423,7 @@ def main() -> None:
             st.info("ℹ️ No anonymization mappings were created. The downloaded file will match the original data.")
         
         # Prepare filename
-        name_parts = display_name.rsplit('.', 1)
+        name_parts = display_name.rsplit('.', 1) # pyright: ignore[reportOptionalMemberAccess]
         if len(name_parts) == 2:
             anonymized_filename = f"{name_parts[0]}_anonymized.{name_parts[1]}"
         else:
@@ -623,14 +441,15 @@ def main() -> None:
             type="primary"
         )
 
-        # Preview anonymized data (first 50 lines) with option to expand
-        preview_lines = json_str.splitlines()
-        preview_snippet = "\n".join(preview_lines[:50]) if preview_lines else ""
-        st.write("**📄 Anonymized Data Preview (first 50 lines)**")
-        st.code(preview_snippet or "(empty)", language="json")
-        if len(preview_lines) > 50:
-            with st.expander("Show full anonymized JSON"):
-                st.code(json_str, language="json")
+        # Preview anonymized data
+        with st.expander("📄 Preview Anonymized Data", expanded=False):
+            preview_lines = json_str.splitlines()
+            preview_snippet = "\n".join(preview_lines[:50]) if preview_lines else ""
+            st.code(preview_snippet or "(empty)", language="json")
+            
+            if len(preview_lines) > 50:
+                if st.checkbox("Show full JSON content", key="show_full_json"):
+                    st.code(json_str, language="json")
         
         # Optional: Also save to same folder if requested (only when data changed)
         if save_option == "Save to same folder" and name_mappings:
