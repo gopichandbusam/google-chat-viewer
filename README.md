@@ -156,7 +156,11 @@ The viewer runs in **manual anonymization mode only**, putting you in full contr
 google-chat-viewer/
 ├── app.py           # Main application
 ├── ui.py            # UI components and layout
-├── run.py           # Setup and launch script
+├── setup.sh         # Environment setup
+├── start.sh         # Launch script
+├── stop.sh          # Shutdown script
+├── clean.sh         # Cleanup script
+├── help.sh          # Command helper
 ├── requirements.txt # Dependencies
 ├── README.md        # This file
 └── venv/            # Virtual environment (created automatically)
@@ -194,7 +198,7 @@ google-chat-viewer/
 ## Troubleshooting
 
 **Problem**: "No module named streamlit"
-**Solution**: Run `python3 run.py` which handles setup automatically
+**Solution**: Run `./setup.sh` to install dependencies automatically
 
 **Problem**: Can't find JSON file
 **Solution**: Use the upload button in the web interface
@@ -202,31 +206,6 @@ google-chat-viewer/
 **Problem**: Permission errors
 **Solution**: Make sure you have write permissions in the current directory
 
-## 🤝 Contributing
-
-We welcome contributions! This project is open source and community-driven.
-
-### **How to Contribute**
-
-1. **🍴 Fork the Repository**
-   ```bash
-   git clone https://github.com/gopichandbusam/google-chat-viewer.git
-   cd google-chat-viewer
-   ```
-
-2. **🌿 Create a Feature Branch**
-   ```bash
-   git checkout -b feature/amazing-new-feature
-   ```
-
-3. **🔧 Make Your Changes**
-   - Add new features
-   - Fix bugs
-   - Improve documentation
-   - Add tests
-
-4. **✅ Test Your Changes**
-   ```bash
 ## 🤝 Contributing
 
 We welcome contributions! This project is open source and community-driven.
