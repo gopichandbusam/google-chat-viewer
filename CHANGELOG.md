@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Modular Architecture**: Moved core parsing and mapping logic (`parse_chat_message`, `compile_mappings`) to `ui.py` to resolve circular dependencies and improve code organization.
 - **Clean Imports**: Streamlined import statements across the application.
 
+### 🚀 Added
+- **Maintenance Scripts**: Added `./clean.sh` for environment cleanup and `./help.sh` for command guidance.
+
 ### 🐛 Fixed
 - **Session State Warning**: Resolved Streamlit widget warning in the Quick Anonymization panel by decoupling widget values from session state.
 

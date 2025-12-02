@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any, Pattern
 
 # Third-party imports
-import streamlit as st
+import streamlit as st # type: ignore
 
 # ===== APPLICATION CONFIGURATION =====
 APP_TITLE = "Google Chat Viewer"

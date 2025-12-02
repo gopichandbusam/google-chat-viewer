@@ -77,16 +77,24 @@ A comprehensive, open-source Streamlit application for viewing, analyzing, and a
    ```
    Or press `Ctrl+C` in the terminal where it's running
 
-5. **Upload your file**: Use the web interface to upload your Google Chat JSON file
+5. **Maintenance**:
+   - Clean up environment: `./clean.sh`
+   - View commands: `./help.sh`
 
-6. **View your data**: Browse through your chat messages in a clean interface
+6. **Upload your file**: Use the web interface to upload your Google Chat JSON file
+
+7. **View your data**: Browse through your chat messages in a clean interface
 
 #### File Structure
 ```
 google-chat-viewer/
 ├── app.py           # Main application
 ├── ui.py            # UI components and layout
-├── run.py           # Setup and launch script
+├── setup.sh         # Environment setup
+├── start.sh         # Launch script
+├── stop.sh          # Shutdown script
+├── clean.sh         # Cleanup script
+├── help.sh          # Command helper
 ├── requirements.txt # Dependencies
 ├── README.md        # This file
 └── venv/            # Virtual environment (created automatically)

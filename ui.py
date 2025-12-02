@@ -16,7 +16,7 @@ from typing import Dict, Optional, Tuple, Any, List, Pattern
 from datetime import datetime
 from collections import Counter
 
-import streamlit as st
+import streamlit as st # type: ignore
 
 # Import configuration constants from app
 from app import (
